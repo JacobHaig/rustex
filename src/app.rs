@@ -1,6 +1,6 @@
 use crossterm::event::KeyCode;
 
-use crate::widgets::{FileMenuStates, StatefulList};
+use crate::widgets::{FileMenuState, StatefulList};
 
 const MENU_OPTIONS: [&str; 6] = [
     "New File",
@@ -14,35 +14,21 @@ const MENU_OPTIONS: [&str; 6] = [
 pub struct App<'a> {
     pub title: &'a str,
     pub should_quit: bool,
-    pub files: FileMenuStates,
-    // pub show_chart: bool,
+
+    pub files: FileMenuState,
+
     pub interaction_menu_visable: bool,
     pub interaction_menu: StatefulList<&'a str>,
-    // pub progress: f64,
-    // pub sparkline: Signal<RandomSignal>,
-    // pub logs: StatefulList<(&'a str, &'a str)>,
-    // pub signals: Signals,
-    // pub barchart: Vec<(&'a str, u64)>,
-    // pub servers: Vec<Server<'a>>,
-    pub enhanced_graphics: bool,
 }
 
 impl<'a> App<'a> {
-    pub fn new(title: &'a str, enhanced_graphics: bool) -> App<'a> {
-        // let mut rand_signal = RandomSignal::new(0, 100);
-        // let sparkline_points = rand_signal.by_ref().take(300).collect();
-        // let mut sin_signal = SinSignal::new(0.2, 3.0, 18.0);
-        // let sin1_points = sin_signal.by_ref().take(100).collect();
-        // let mut sin_signal2 = SinSignal::new(0.1, 2.0, 10.0);
-        // let sin2_points = sin_signal2.by_ref().take(200).collect();
+    pub fn new(title: &'a str) -> App<'a> {
         App {
             title,
             should_quit: false,
-            files: FileMenuStates::new(),
+            files: FileMenuState::new(),
 
             interaction_menu: StatefulList::with_items(MENU_OPTIONS.to_vec()),
-            // files: ,
-            enhanced_graphics: enhanced_graphics,
             interaction_menu_visable: true,
         }
     }

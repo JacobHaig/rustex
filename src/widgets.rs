@@ -1,70 +1,18 @@
-use std::{cmp::min, ffi::OsString, io::Write, path::Path};
+use std::cmp::min;
+use std::ffi::OsString;
+use std::io::Write;
+use std::path::Path;
 
 use tui::widgets::ListState;
-// #[cfg(feature = "termion")]
-// pub mod event;
 
-// use rand::distributions::{Distribution, Uniform};
-// use rand::rngs::ThreadRng;
-
-// #[derive(Clone)]
-// pub struct RandomSignal {
-//     distribution: Uniform<u64>,
-//     rng: ThreadRng,
-// }
-
-// impl RandomSignal {
-//     pub fn new(lower: u64, upper: u64) -> RandomSignal {
-//         RandomSignal {
-//             distribution: Uniform::new(lower, upper),
-//             rng: rand::thread_rng(),
-//         }
-//     }
-// }
-
-// impl Iterator for RandomSignal {
-//     type Item = u64;
-//     fn next(&mut self) -> Option<u64> {
-//         Some(self.distribution.sample(&mut self.rng))
-//     }
-// }
-
-// #[derive(Clone)]
-// pub struct SinSignal {
-//     x: f64,
-//     interval: f64,
-//     period: f64,
-//     scale: f64,
-// }
-
-// impl SinSignal {
-//     pub fn new(interval: f64, period: f64, scale: f64) -> SinSignal {
-//         SinSignal {
-//             x: 0.0,
-//             interval,
-//             period,
-//             scale,
-//         }
-//     }
-// }
-
-// impl Iterator for SinSignal {
-//     type Item = (f64, f64);
-//     fn next(&mut self) -> Option<Self::Item> {
-//         let point = (self.x, (self.x * 1.0 / self.period).sin() * self.scale);
-//         self.x += self.interval;
-//         Some(point)
-//     }
-// }
-
-pub struct FileMenuStates {
+pub struct FileMenuState {
     pub tab_index: usize,
     pub file_list: Vec<FileMenu>,
 }
 
-impl FileMenuStates {
-    pub fn new() -> FileMenuStates {
-        FileMenuStates {
+impl FileMenuState {
+    pub fn new() -> FileMenuState {
+        FileMenuState {
             tab_index: 0,
             file_list: vec![FileMenu::new("HI"), FileMenu::new("Hellooo!")],
         }
