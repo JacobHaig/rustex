@@ -54,7 +54,7 @@ pub struct FileMenu {
     pub selection_active: bool,
 
     pub lines: Vec<String>,
-    pub scroll_offset: usize,
+    pub scroll_offset: usize, // Check ListState offset as an example of how to implement
 }
 
 impl FileMenu {
@@ -246,30 +246,43 @@ impl FileMenu {
     }
 }
 
-pub struct StatefulList<T> {
-    pub state: ListState,
-    pub items: Vec<T>,
+// use std::ops::Index;
+use std::string::ToString;
+use strum::*;
+use strum_macros::Display;
+use strum_macros::*;
+
+#[derive(Debug, Display, Clone, EnumString, EnumIter, EnumCount, PartialEq, Eq, Hash)]
+#[strum(serialize_all = "title_case")]
+pub enum MenuAction {
+    // Example of how to set a specific name.
+    // #[strum(serialize = "New File")]
+    NewFile,
+    OpenFile,
+    SaveFile,
+    SaveFileAs,
+    SaveAll,
+    CloseFile,
 }
 
-impl<T> StatefulList<T> {
-    pub fn new() -> StatefulList<T> {
-        StatefulList {
-            state: ListState::default(),
-            items: Vec::new(),
-        }
-    }
+pub struct StatefulList {
+    pub state: ListState,
+    // pub items: MenuAction, // This is currently not important.
+}
 
-    pub fn with_items(items: Vec<T>) -> StatefulList<T> {
+impl StatefulList {
+    pub fn new() -> StatefulList {
         StatefulList {
             state: ListState::default(),
-            items,
+            // items: MenuAction::NewFile,
         }
     }
 
     pub fn next(&mut self) {
         let i = match self.state.selected() {
+            // Can this be replaced with a euclidean mod? aka modulo?
             Some(i) => {
-                if i >= self.items.len() - 1 {
+                if i >= MenuAction::COUNT - 1 {
                     0
                 } else {
                     i + 1
@@ -284,7 +297,7 @@ impl<T> StatefulList<T> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    MenuAction::COUNT - 1
                 } else {
                     i - 1
                 }
@@ -296,5 +309,19 @@ impl<T> StatefulList<T> {
 
     pub fn unselect(&mut self) {
         self.state.select(None);
+    }
+
+    // This function preforms the action that is selected.
+    pub fn run(&self) {
+        if let Some(i) = self.state.selected() {
+            match MenuAction::iter().nth(i).unwrap() {
+                MenuAction::NewFile => println!("New File"),
+                MenuAction::OpenFile => println!("Open File"),
+                MenuAction::SaveFile => println!("Save File"),
+                MenuAction::SaveFileAs => println!("Save File As"),
+                MenuAction::SaveAll => println!("Save All"),
+                MenuAction::CloseFile => println!("Close File"),
+            }
+        }
     }
 }

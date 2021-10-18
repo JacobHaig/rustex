@@ -2,15 +2,6 @@ use crossterm::event::KeyCode;
 
 use crate::widgets::{FileMenuState, StatefulList};
 
-const MENU_OPTIONS: [&str; 6] = [
-    "New File",
-    "Open File",
-    "Save File",
-    "Save File As",
-    "Save All",
-    "Close File",
-];
-
 pub struct App<'a> {
     pub title: &'a str,
     pub should_quit: bool,
@@ -18,7 +9,7 @@ pub struct App<'a> {
     pub files: FileMenuState,
 
     pub interaction_menu_visable: bool,
-    pub interaction_menu: StatefulList<&'a str>,
+    pub interaction_menu: StatefulList,
 }
 
 impl<'a> App<'a> {
@@ -28,8 +19,8 @@ impl<'a> App<'a> {
             should_quit: false,
             files: FileMenuState::new(),
 
-            interaction_menu: StatefulList::with_items(MENU_OPTIONS.to_vec()),
-            interaction_menu_visable: true,
+            interaction_menu: StatefulList::new(),
+            interaction_menu_visable: false,
         }
     }
 
@@ -79,37 +70,52 @@ impl<'a> App<'a> {
         // self.barchart.insert(0, event);
     }
 
-    pub(crate) fn handle_keyboard_event(&mut self, event: crossterm::event::KeyEvent) {
-        let file_edit_mode = !self.interaction_menu_visable;
+    // handle_keyboard_event is the main function for sorting
+    // out what happens when a key is pressed.
+    pub fn handle_keyboard_event(&mut self, event: crossterm::event::KeyEvent) {
+        let file_edit_mode = !self.interaction_menu_visable; // I might want to implement a FSM for this
 
         let code = event.code;
-        let _modifiers = event.modifiers;
+        let flags = event.modifiers.bits(); // ( alt, control, shift) 0b0111
 
-        if file_edit_mode {
+        if self.interaction_menu_visable {
             match code {
-                KeyCode::Tab => self.toggle_interaction_menu(),
+                KeyCode::Char('`') => self.toggle_interaction_menu(),
+                KeyCode::Enter => self.interaction_menu.run(),
 
-                KeyCode::Char(c) => self.files.current_file_menu().insert_char(c),
-                KeyCode::Enter => self.files.current_file_menu().insert_new_line(),
-                KeyCode::Backspace => self.files.current_file_menu().backspace_char(),
-                KeyCode::Delete => self.files.current_file_menu().delete_char(),
-
-                KeyCode::Left => self.files.current_file_menu().move_cursor_x(-1),
-                KeyCode::Right => self.files.current_file_menu().move_cursor_x(1),
-                KeyCode::Up => self.files.current_file_menu().move_cursor_y(-1),
-                KeyCode::Down => self.files.current_file_menu().move_cursor_y(1),
-
-                _ => {}
-            }
-        } else {
-            match code {
-                // KeyCode::Char(c) => self.on_key(c),
                 KeyCode::Left => self.on_left(),
                 KeyCode::Up => self.on_up(),
                 KeyCode::Right => self.on_right(),
                 KeyCode::Down => self.on_down(),
-                KeyCode::Tab => self.toggle_interaction_menu(),
                 _ => {}
+            }
+        } else if file_edit_mode {
+            dbg!("{:?}", flags);
+
+            match flags {
+                // Holding Alt
+                // Note, when run in an IDE the alt key may not work
+                0b0100 => match code {
+                    KeyCode::Down => todo!("Move Current Line DOWN"),
+                    KeyCode::Up => todo!("Move Current Line UP"),
+                    _ => {}
+                },
+
+                // No modifiers, holding Shift, unknown combination
+                0b0000 | _ => match code {
+                    KeyCode::Char('`') => self.toggle_interaction_menu(),
+
+                    KeyCode::Char(c) => self.files.current_file_menu().insert_char(c),
+                    KeyCode::Enter => self.files.current_file_menu().insert_new_line(),
+                    KeyCode::Backspace => self.files.current_file_menu().backspace_char(),
+                    KeyCode::Delete => self.files.current_file_menu().delete_char(),
+
+                    KeyCode::Left => self.files.current_file_menu().move_cursor_x(-1),
+                    KeyCode::Right => self.files.current_file_menu().move_cursor_x(1),
+                    KeyCode::Up => self.files.current_file_menu().move_cursor_y(-1),
+                    KeyCode::Down => self.files.current_file_menu().move_cursor_y(1),
+                    _ => {}
+                },
             }
         }
     }

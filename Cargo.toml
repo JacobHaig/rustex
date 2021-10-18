@@ -10,3 +10,5 @@ rand = "0.8.4"
 argh = "0.1.6"
 crossterm = "0.21.0"
 tui = { version = "0.16", default-features = false, features = ['crossterm'] }
+strum = "0.22"
+strum_macros = "0.22"

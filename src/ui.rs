@@ -1,4 +1,5 @@
-use crate::app::App;
+use crate::{app::App, widgets};
+use strum::*;
 
 use tui::{
     backend::Backend,
@@ -49,6 +50,8 @@ fn draw_header<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     frame.render_widget(tabs, area);
 }
 
+// The viewport is the 'main' area that the user interacts with.
+// It is made up the interaction menu and the editor piece.
 fn draw_viewport<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let constraints = if app.interaction_menu_visable {
         vec![Constraint::Length(15), Constraint::Percentage(80)]
@@ -56,19 +59,54 @@ fn draw_viewport<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         vec![Constraint::Percentage(0), Constraint::Percentage(100)]
     };
 
-    let chunks = Layout::default()
+    let chunks = &Layout::default()
         .constraints(constraints)
         .direction(Direction::Horizontal)
         .split(area);
 
     // Draw Left Side Panel
+    draw_interaction_menu(app, frame, chunks);
+    draw_editor(app, frame, chunks);
+}
+
+fn draw_editor<B: Backend>(app: &mut App, frame: &mut Frame<B>, chunks: &[Rect]) {
+    let cursor_y = app.files.current_file_menu().cursor_y;
+    let cursor_x = app.files.current_file_menu().cursor_x;
+
+    let text_string: String = app
+        .files
+        .current_file_menu()
+        .get_lines(0, 8)
+        .iter()
+        .enumerate()
+        .map(|(y, strs)| {
+            let mut s = strs.clone();
+            if y == cursor_y {
+                s.insert(cursor_x, '█');
+            }
+            s
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    let text = Text::from(text_string);
+    let block = Block::default().borders(Borders::TOP).title(Span::styled(
+        app.files.current_file_menu().name.to_str().unwrap(),
+        Style::default()
+            .fg(Color::Magenta)
+            .add_modifier(Modifier::BOLD),
+    ));
+
+    let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: false });
+    frame.render_widget(paragraph, chunks[1]);
+}
+
+fn draw_interaction_menu<B: Backend>(app: &mut App, frame: &mut Frame<B>, chunks: &[Rect]) {
     if app.interaction_menu_visable {
-        let menu_items: Vec<ListItem> = app
-            .interaction_menu
-            .items
-            .iter()
-            .map(|i| ListItem::new(vec![Spans::from(Span::raw(*i))]))
+        let menu_items: Vec<ListItem> = widgets::MenuAction::iter()
+            .map(|i| ListItem::new(vec![Spans::from(Span::raw(i.to_string()))]))
             .collect();
+
         let tasks = List::new(menu_items)
             .block(
                 Block::default()
@@ -89,43 +127,6 @@ fn draw_viewport<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 
         frame.render_stateful_widget(tasks, chunks[0], &mut app.interaction_menu.state);
     }
-
-    let cursor_y = app.files.current_file_menu().cursor_y;
-    let cursor_x = app.files.current_file_menu().cursor_x;
-
-    // Insert the cursor and new line characters
-    // into the string to be displayed
-    let text_string: String = app
-        .files
-        .current_file_menu()
-        .get_lines(0, 8)
-        .iter()
-        .enumerate()
-        .map(|(y, strs)| {
-            let mut s = strs.clone();
-            if y == cursor_y {
-                s.insert(cursor_x, '█');
-            }
-            s
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    // Place Holder for the Viewport
-    let text = Text::from(text_string);
-
-    // Text::from(
-    //     r#""#,
-    // );
-
-    let block = Block::default().borders(Borders::TOP).title(Span::styled(
-        app.files.current_file_menu().name.to_str().unwrap(),
-        Style::default()
-            .fg(Color::Magenta)
-            .add_modifier(Modifier::BOLD),
-    ));
-    let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: false });
-    frame.render_widget(paragraph, chunks[1]);
 }
 
 fn draw_console<B>(f: &mut Frame<B>, area: Rect)
