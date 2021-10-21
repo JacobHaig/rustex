@@ -6,7 +6,7 @@ pub struct App<'a> {
     pub title: &'a str,
     pub should_quit: bool,
 
-    pub files: FileMenuState,
+    pub file_menu_state: FileMenuState,
 
     pub interaction_menu_visable: bool,
     pub interaction_menu: StatefulList,
@@ -17,27 +17,11 @@ impl<'a> App<'a> {
         App {
             title,
             should_quit: false,
-            files: FileMenuState::new(),
+            file_menu_state: FileMenuState::new(),
 
             interaction_menu: StatefulList::new(),
             interaction_menu_visable: false,
         }
-    }
-
-    pub fn on_up(&mut self) {
-        self.interaction_menu.previous();
-    }
-
-    pub fn on_down(&mut self) {
-        self.interaction_menu.next();
-    }
-
-    pub fn on_right(&mut self) {
-        self.files.next();
-    }
-
-    pub fn on_left(&mut self) {
-        self.files.previous();
     }
 
     pub fn toggle_interaction_menu(&mut self) {
@@ -83,18 +67,19 @@ impl<'a> App<'a> {
                 KeyCode::Char('`') => self.toggle_interaction_menu(),
                 KeyCode::Enter => self.interaction_menu.run(),
 
-                KeyCode::Left => self.on_left(),
-                KeyCode::Up => self.on_up(),
-                KeyCode::Right => self.on_right(),
-                KeyCode::Down => self.on_down(),
+                KeyCode::Left => self.file_menu_state.previous(),
+                KeyCode::Right => self.file_menu_state.next(),
+
+                KeyCode::Up => self.interaction_menu.previous(),
+                KeyCode::Down => self.interaction_menu.next(),
                 _ => {}
             }
         } else if file_edit_mode {
-            dbg!("{:?}", flags);
+            // dbg!("{:?}", flags);
 
             match flags {
                 // Holding Alt
-                // Note, when run in an IDE the alt key may not work
+                // Note, when run in an IDE the alt key may be eaten by the IDE
                 0b0100 => match code {
                     KeyCode::Down => todo!("Move Current Line DOWN"),
                     KeyCode::Up => todo!("Move Current Line UP"),
@@ -105,15 +90,15 @@ impl<'a> App<'a> {
                 0b0000 | _ => match code {
                     KeyCode::Char('`') => self.toggle_interaction_menu(),
 
-                    KeyCode::Char(c) => self.files.current_file_menu().insert_char(c),
-                    KeyCode::Enter => self.files.current_file_menu().insert_new_line(),
-                    KeyCode::Backspace => self.files.current_file_menu().backspace_char(),
-                    KeyCode::Delete => self.files.current_file_menu().delete_char(),
+                    KeyCode::Char(c) => self.file_menu_state.current_file_menu().insert_char(c),
+                    KeyCode::Enter => self.file_menu_state.current_file_menu().insert_new_line(),
+                    KeyCode::Backspace => self.file_menu_state.current_file_menu().backspace_char(),
+                    KeyCode::Delete => self.file_menu_state.current_file_menu().delete_char(),
 
-                    KeyCode::Left => self.files.current_file_menu().move_cursor_x(-1),
-                    KeyCode::Right => self.files.current_file_menu().move_cursor_x(1),
-                    KeyCode::Up => self.files.current_file_menu().move_cursor_y(-1),
-                    KeyCode::Down => self.files.current_file_menu().move_cursor_y(1),
+                    KeyCode::Left => self.file_menu_state.current_file_menu().move_cursor_x(-1),
+                    KeyCode::Right => self.file_menu_state.current_file_menu().move_cursor_x(1),
+                    KeyCode::Up => self.file_menu_state.current_file_menu().move_cursor_y(-1),
+                    KeyCode::Down => self.file_menu_state.current_file_menu().move_cursor_y(1),
                     _ => {}
                 },
             }

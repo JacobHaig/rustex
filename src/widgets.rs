@@ -244,6 +244,24 @@ impl FileMenu {
         let end = start + line_amount;
         self.get_lines(start, end)
     }
+
+    pub fn get_display_text(&self) -> String {
+        let display_string: String = self
+            .get_lines(0, 8)
+            .iter()
+            .enumerate()
+            .map(|(y, strs)| {
+                let mut s = strs.clone();
+                if y == self.cursor_y {
+                    s.insert(self.cursor_x, '█');
+                }
+                s
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        display_string
+    }
 }
 
 // use std::ops::Index;
@@ -282,11 +300,8 @@ impl StatefulList {
         let i = match self.state.selected() {
             // Can this be replaced with a euclidean mod? aka modulo?
             Some(i) => {
-                if i >= MenuAction::COUNT - 1 {
-                    0
-                } else {
-                    i + 1
-                }
+                let i = i + 1;
+                i.rem_euclid(MenuAction::COUNT)
             }
             None => 0,
         };
@@ -296,11 +311,8 @@ impl StatefulList {
     pub fn previous(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i == 0 {
-                    MenuAction::COUNT - 1
-                } else {
-                    i - 1
-                }
+                let i = i as i32 - 1;
+                i.rem_euclid(MenuAction::COUNT as i32) as usize
             }
             None => 0,
         };

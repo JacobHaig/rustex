@@ -29,7 +29,7 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
 
 fn draw_header<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let titles = app
-        .files
+        .file_menu_state
         .file_list
         .iter()
         .map(|menu| {
@@ -46,7 +46,8 @@ fn draw_header<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             Style::default().fg(Color::Magenta),
         )))
         .highlight_style(Style::default().fg(Color::Yellow))
-        .select(app.files.tab_index);
+        .select(app.file_menu_state.tab_index);
+        
     frame.render_widget(tabs, area);
 }
 
@@ -70,34 +71,19 @@ fn draw_viewport<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 }
 
 fn draw_editor<B: Backend>(app: &mut App, frame: &mut Frame<B>, chunks: &[Rect]) {
-    let cursor_y = app.files.current_file_menu().cursor_y;
-    let cursor_x = app.files.current_file_menu().cursor_x;
+    let display_string = app.file_menu_state.current_file_menu().get_display_text();
+    let display_text = Text::from(display_string);
 
-    let text_string: String = app
-        .files
-        .current_file_menu()
-        .get_lines(0, 8)
-        .iter()
-        .enumerate()
-        .map(|(y, strs)| {
-            let mut s = strs.clone();
-            if y == cursor_y {
-                s.insert(cursor_x, '█');
-            }
-            s
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    let text = Text::from(text_string);
     let block = Block::default().borders(Borders::TOP).title(Span::styled(
-        app.files.current_file_menu().name.to_str().unwrap(),
+        app.file_menu_state.current_file_menu().name.to_str().unwrap(),
         Style::default()
             .fg(Color::Magenta)
             .add_modifier(Modifier::BOLD),
     ));
 
-    let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: false });
+    let paragraph = Paragraph::new(display_text)
+        .block(block)
+        .wrap(Wrap { trim: false });
     frame.render_widget(paragraph, chunks[1]);
 }
 
