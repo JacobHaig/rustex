@@ -3,44 +3,12 @@ use std::ffi::OsString;
 use std::io::Write;
 use std::path::Path;
 
-use tui::widgets::ListState;
+use crossterm::event::KeyCode;
 
-pub struct FileMenuState {
-    pub tab_index: usize,
-    pub file_list: Vec<FileMenu>,
-}
-
-impl FileMenuState {
-    pub fn new() -> FileMenuState {
-        FileMenuState {
-            tab_index: 0,
-            file_list: vec![FileMenu::new("HI"), FileMenu::new("Hellooo!")],
-        }
-    }
-
-    pub fn add_file_menu(&mut self, file_menu: FileMenu) {
-        self.file_list.push(file_menu);
-    }
-
-    pub fn next(&mut self) {
-        self.tab_index = (self.tab_index + 1) % self.file_list.len();
-    }
-
-    pub fn previous(&mut self) {
-        if self.tab_index > 0 {
-            self.tab_index -= 1;
-        } else {
-            self.tab_index = self.file_list.len() - 1;
-        }
-    }
-
-    pub fn current_file_menu(&mut self) -> &mut FileMenu {
-        &mut self.file_list[self.tab_index]
-    }
-}
+use crate::widgets::Window;
 
 #[derive(Clone, Default, Debug)]
-pub struct FileMenu {
+pub struct FileWindow {
     pub name: OsString,
     pub path: Option<Box<Path>>,
 
@@ -57,16 +25,34 @@ pub struct FileMenu {
     pub scroll_offset: usize, // Check ListState offset as an example of how to implement
 }
 
-impl FileMenu {
-    pub fn new(name: &str) -> FileMenu {
-        FileMenu {
+impl Window for FileWindow {
+    fn handle_keyboard_input(&mut self, keycode: KeyCode, _keyflags: u8) {
+        match keycode {
+            KeyCode::Char(c) => self.insert_char(c),
+            KeyCode::Enter => self.insert_new_line(),
+            KeyCode::Backspace => self.backspace_char(),
+            KeyCode::Delete => self.delete_char(),
+
+            KeyCode::Left => self.move_cursor_x(-1),
+            KeyCode::Right => self.move_cursor_x(1),
+            KeyCode::Up => self.move_cursor_y(-1),
+            KeyCode::Down => self.move_cursor_y(1),
+
+            _ => (),
+        }
+    }
+}
+
+impl FileWindow {
+    pub fn new(name: &str) -> FileWindow {
+        FileWindow {
             name: OsString::from(name),
             path: None,
             lines: vec!["".to_string()],
             ..Default::default()
         }
     }
-    pub fn open_file(path: Box<Path>) -> Result<FileMenu, std::io::Error> {
+    pub fn open_file(path: Box<Path>) -> Result<FileWindow, std::io::Error> {
         let name = path.file_name().unwrap().to_os_string();
 
         let lines = std::fs::read_to_string(&path)
@@ -77,7 +63,7 @@ impl FileMenu {
 
         let path = Some(path);
 
-        Ok(FileMenu {
+        Ok(FileWindow {
             name,
             path,
             lines,
@@ -261,79 +247,5 @@ impl FileMenu {
             .join("\n");
 
         display_string
-    }
-}
-
-// use std::ops::Index;
-use std::string::ToString;
-use strum::*;
-use strum_macros::Display;
-use strum_macros::*;
-
-#[derive(Debug, Display, Clone, EnumString, EnumIter, EnumCount, PartialEq, Eq, Hash)]
-#[strum(serialize_all = "title_case")]
-pub enum MenuAction {
-    // Example of how to set a specific name.
-    // #[strum(serialize = "New File")]
-    NewFile,
-    OpenFile,
-    SaveFile,
-    SaveFileAs,
-    SaveAll,
-    CloseFile,
-}
-
-pub struct StatefulList {
-    pub state: ListState,
-    // pub items: MenuAction, // This is currently not important.
-}
-
-impl StatefulList {
-    pub fn new() -> StatefulList {
-        StatefulList {
-            state: ListState::default(),
-            // items: MenuAction::NewFile,
-        }
-    }
-
-    pub fn next(&mut self) {
-        let i = match self.state.selected() {
-            // Can this be replaced with a euclidean mod? aka modulo?
-            Some(i) => {
-                let i = i + 1;
-                i.rem_euclid(MenuAction::COUNT)
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn previous(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                let i = i as i32 - 1;
-                i.rem_euclid(MenuAction::COUNT as i32) as usize
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn unselect(&mut self) {
-        self.state.select(None);
-    }
-
-    // This function preforms the action that is selected.
-    pub fn run(&self) {
-        if let Some(i) = self.state.selected() {
-            match MenuAction::iter().nth(i).unwrap() {
-                MenuAction::NewFile => println!("New File"),
-                MenuAction::OpenFile => println!("Open File"),
-                MenuAction::SaveFile => println!("Save File"),
-                MenuAction::SaveFileAs => println!("Save File As"),
-                MenuAction::SaveAll => println!("Save All"),
-                MenuAction::CloseFile => println!("Close File"),
-            }
-        }
     }
 }

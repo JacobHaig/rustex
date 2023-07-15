@@ -1,4 +1,7 @@
-use crate::{app::App, widgets};
+use crate::{
+    app::{App, WindowState},
+    widgets,
+};
 use strum::*;
 
 use tui::{
@@ -29,7 +32,8 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
 
 fn draw_header<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let titles = app
-        .file_menu_state
+        .context
+        .file_manager_window
         .file_list
         .iter()
         .map(|menu| {
@@ -46,15 +50,15 @@ fn draw_header<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             Style::default().fg(Color::Magenta),
         )))
         .highlight_style(Style::default().fg(Color::Yellow))
-        .select(app.file_menu_state.tab_index);
-        
+        .select(app.context.file_manager_window.current_file_index);
+
     frame.render_widget(tabs, area);
 }
 
 // The viewport is the 'main' area that the user interacts with.
 // It is made up the interaction menu and the editor piece.
 fn draw_viewport<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
-    let constraints = if app.interaction_menu_visable {
+    let constraints = if app.context.current_window == WindowState::Navigation {
         vec![Constraint::Length(15), Constraint::Percentage(80)]
     } else {
         vec![Constraint::Percentage(0), Constraint::Percentage(100)]
@@ -66,16 +70,25 @@ fn draw_viewport<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         .split(area);
 
     // Draw Left Side Panel
-    draw_interaction_menu(app, frame, chunks);
     draw_editor(app, frame, chunks);
+    draw_interaction_menu(app, frame, chunks);
 }
 
 fn draw_editor<B: Backend>(app: &mut App, frame: &mut Frame<B>, chunks: &[Rect]) {
-    let display_string = app.file_menu_state.current_file_menu().get_display_text();
+    let display_string = app
+        .context
+        .file_manager_window
+        .current_file()
+        .get_display_text();
     let display_text = Text::from(display_string);
 
     let block = Block::default().borders(Borders::TOP).title(Span::styled(
-        app.file_menu_state.current_file_menu().name.to_str().unwrap(),
+        app.context
+            .file_manager_window
+            .current_file()
+            .name
+            .to_str()
+            .unwrap(),
         Style::default()
             .fg(Color::Magenta)
             .add_modifier(Modifier::BOLD),
@@ -88,31 +101,33 @@ fn draw_editor<B: Backend>(app: &mut App, frame: &mut Frame<B>, chunks: &[Rect])
 }
 
 fn draw_interaction_menu<B: Backend>(app: &mut App, frame: &mut Frame<B>, chunks: &[Rect]) {
-    if app.interaction_menu_visable {
-        let menu_items: Vec<ListItem> = widgets::MenuAction::iter()
-            .map(|i| ListItem::new(vec![Spans::from(Span::raw(i.to_string()))]))
-            .collect();
+    let menu_items: Vec<ListItem> = widgets::navigation::ActionMenuWindow::iter()
+        .map(|i| ListItem::new(vec![Spans::from(Span::raw(i.to_string()))]))
+        .collect();
 
-        let tasks = List::new(menu_items)
-            .block(
-                Block::default()
-                    .borders(Borders::RIGHT | Borders::TOP)
-                    .title(Span::styled(
-                        "Menu",
-                        Style::default()
-                            .fg(Color::Magenta)
-                            .add_modifier(Modifier::BOLD),
-                    )),
-            )
-            .highlight_style(
-                Style::default()
-                    .fg(Color::Magenta)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
+    let tasks = List::new(menu_items)
+        .block(
+            Block::default()
+                .borders(Borders::RIGHT | Borders::TOP)
+                .title(Span::styled(
+                    "Menu",
+                    Style::default()
+                        .fg(Color::Magenta)
+                        .add_modifier(Modifier::BOLD),
+                )),
+        )
+        .highlight_style(
+            Style::default()
+                .fg(Color::Magenta)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol("> ");
 
-        frame.render_stateful_widget(tasks, chunks[0], &mut app.interaction_menu.state);
-    }
+    frame.render_stateful_widget(
+        tasks,
+        chunks[0],
+        &mut app.context.navigation_window.list_state,
+    );
 }
 
 fn draw_console<B>(f: &mut Frame<B>, area: Rect)

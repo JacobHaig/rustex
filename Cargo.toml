@@ -6,9 +6,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "0.8.4"
-argh = "0.1.6"
-crossterm = "0.21.0"
-tui = { version = "0.16", default-features = false, features = ['crossterm'] }
-strum = "0.22"
-strum_macros = "0.22"
+rand = "0.8.5"
+argh = "0.1.10"
+crossterm = "0.26.1"
+tui = { version = "0.19", default-features = false, features = ['crossterm'] }
+strum = "0.25.0"
+strum_macros = "0.25.1"
